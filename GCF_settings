@@ -1,0 +1,8 @@
+GSMGSE_pkl_path	/Users/boxia/PycharmProjects/ChiPSeqPairWeb/db/GSMGSE_map.pkl
+Encode	/Users/boxia/PycharmProjects/ChiPSeqPairWeb/db/ENCODE_gse.pkl
+Roadmap	/Users/boxia/PycharmProjects/ChiPSeqPairWeb/db/Roadmap_gse.pkl
+GGR	/Users/boxia/PycharmProjects/ChiPSeqPairWeb/db/GGR_gse.pkl
+GSMtoSRRpkl	/Users/boxia/PycharmProjects/ChiPSeqPairWeb/db/GSMSRR_map.pkl
+email	bxia@houstonmethodist.org
+MetaData    /Users/boxia/PycharmProjects/ChiPSeqPairWeb/db/geoMetaData.db
+Chipseq /Users/boxia/PycharmProjects/ChiPSeqPairWeb/db/chipseq.db

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Match</title>
+
+
+    <link href="http://getbootstrap.com/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <link href="http://getbootstrap.com/examples/jumbotron-narrow/jumbotron-narrow.css" rel="stylesheet">
+    <link href="../static/search.css" rel="stylesheet">
+
+  </head>
+
+  <body>
+
+    <div class="container">
+      <div class="header">
+        <h3 class="text-muted">ChIP-Seq Pair</h3>
+      </div>
+
+      <div class="jumbotron">
+        <h1>Match</h1>
+        <form action = "http://127.0.0.1:5000/match" class="form-match" method="post">
+        <label for="feature1" class="sr-only">Search Terms</label>
+        <input type="text" name="feature1" id="feature1" class="form-control" placeholder="Search terms separated by ','" required>
+        <label for="feature2" class="sr-only">Search Terms</label>
+        <input type="text" name="feature2" id="feature2" class="form-control" placeholder="Search terms separated by ','" required>
+        <label for="Species" class="sr-only">Organism</label>
+        <input type="text" name="Species" id="Species" class="form-control" placeholder="Homo sapiens">
+        <label for="inputEmail" class="sr-only">Email address</label>
+        <input type="email" name="inputEmail" id="inputEmail" class="form-control" placeholder="Email address" required>
+        <button id="btnMatch" class="btn btn-lg btn-primary btn-block" type="submit">Submit</button>
+      </form>
+      </div>
+
+      <footer class="footer">
+        <p>&copy; Kaifu Chen lab 2017, Houston Methodist</p>
+      </footer>
+
+    </div>
+  </body>
+</html>

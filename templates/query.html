@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Query</title>
+    <link href="http://getbootstrap.com/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="http://getbootstrap.com/examples/jumbotron-narrow/jumbotron-narrow.css" rel="stylesheet">
+    <link href="../static/search.css" rel="stylesheet">
+  </head>
+
+  <body>
+
+    <div class="container">
+      <div class="header">
+        <h3 class="text-muted">ChIP-Seq Pair</h3>
+      </div>
+
+      <div class="jumbotron">
+        <h1>Query</h1>
+        <h5 align="left">Please upload a text file containing one ID in each row</h5>
+         <form action = "http://127.0.0.1:5000/query" method = "POST"
+         enctype = "multipart/form-data">
+         <input type = "file" name = "IDlist" />
+         <label for="inputEmail" class="sr-only">Email address</label>
+         <input type="email" name="inputEmail" id="inputEmail" class="form-control" placeholder="Email address" required>
+         <input type = "submit"/>
+      </form>
+
+      </div>
+
+      <footer class="footer">
+        <p>&copy; Kaifu Chen lab 2017, Houston Methodist</p>
+      </footer>
+
+    </div>
+  </body>
+
+</html>
