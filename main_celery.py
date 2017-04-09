@@ -5,6 +5,7 @@ from match import Match
 from setup import get_settings
 from flask_celery import make_celery
 from flask_mail import Mail, Message
+import os
 
 app = Flask(__name__)
 app.config['CELERY_BROKER_URL'] = 'amqp://localhost//'
@@ -134,6 +135,8 @@ def send_email(email, results, output_path, output_names):
         with app.open_resource(output_path+output_name) as table_file:
             msg.attach(output_name, output_name.replace('.','/'), table_file.read())
     mail.send(msg)
+    for name in output_names:
+        os.system('rm '+output_path+name)
     return
 
 if __name__ == "__main__":
