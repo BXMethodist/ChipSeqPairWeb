@@ -108,14 +108,13 @@ def GEO_query(names, output_name, GSM_GSE_pkl, GSM_SRR_pkl, email=None):
         table['GSM_ID'] = pd.Series(result_srr_gsm)
         table['GSE_ID'] = pd.Series(result_srr_gse)
 
-        table.to_csv(output_name, sep="\t")
+    # failed_file = open(output_name[:-4]+"_failed_id.txt", "w")
+    #
+    # for id in failed:
+    #     failed_file.write(id+"\n")
+    # failed_file.close()
 
-    failed_file = open(output_name[:-4]+"_failed_id.txt", "w")
-
-    for id in failed:
-        failed_file.write(id+"\n")
-    failed_file.close()
-
+    return table
 
 
 

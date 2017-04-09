@@ -71,7 +71,10 @@ def Search(output_prefix, output_path, keywords, _Species, cwd, _inputEmail=None
     df['Confidence'] = confidences
     df['Data Description'] = Data_desciption
 
-    result_df = df[df['Confidence'] != 'No Confidence'].copy()
+    confidence_pattern = '|'.join(map(re.escape, ['High', 'Medium', 'Low']))
+
+    result_df = df[df.Confidence.str.contains(confidence_pattern)].copy()
+
     samples = dfToSamples(result_df)
 
     inputs, inputs_description = Input(output_prefix, output_path, keywords, _Species, GSEGSM_map, samples, df)
@@ -94,6 +97,8 @@ def Search(output_prefix, output_path, keywords, _Species, cwd, _inputEmail=None
         result_df = result_df.append(human_encode)
         samples.update(human_encode_map)
 
+    output_name = output_path + output_prefix + '_' + '_'.join(_Species.split()) + '.csv'
+    # result_df.to_csv(output_name)
     return result_df, samples
 
 def dfToSamples(df):
@@ -155,7 +160,7 @@ def Input(output_prefix, output_path,features, speices, GSEGSM_map, samples, df)
         cur_description = ''
         if sample_id in Category1:
             input_ids = Category1[sample_id]
-            input_id += ','.join(list(input_ids))
+            input_id = input_id + ','.join(list(input_ids))
 
             for id in input_ids:
                 cur_title = relatedSamples[id].title
@@ -165,17 +170,13 @@ def Input(output_prefix, output_path,features, speices, GSEGSM_map, samples, df)
 
         elif sample_id in Category3:
             input_ids = Category3[sample_id]
-            input_id += ','.join(list(input_ids))
+            input_id = input_id + ','.join(list(input_ids))
 
             for id in input_ids:
                 cur_title = relatedSamples[id].title
                 cur_description += 'Title:' + cur_title + '; '
                 cur_antibodies = json.dumps(relatedSamples[id].antibody)
                 cur_description += 'Antibody:' + cur_antibodies
-
         inputs.append(input_id)
         inputs_descriptions.append(cur_description)
-    return input, inputs_descriptions
-
-
-
+    return inputs, inputs_descriptions

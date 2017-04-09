@@ -193,6 +193,6 @@ def Match(output_prefix1, output_prefix2, output_path, first_features, second_fe
                       second_samples[value].cellLine, second_samples[value].cellType, second_samples[value].tissue])
 
     df = pd.DataFrame(table, columns=headers)
-    df.to_csv(output, sep=',', encoding='utf-8', index=False)
+    # df.to_csv(output, sep=',', encoding='utf-8', index=False)
 
-    return new_pairs
+    return first_df, second_df, df
