@@ -1,0 +1,29 @@
+<html>
+    <head>
+    <title>One or Two features</title>
+
+
+    <link href="http://getbootstrap.com/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <link href="http://getbootstrap.com/examples/jumbotron-narrow/jumbotron-narrow.css" rel="stylesheet">
+    </head>
+    <body>
+        <div class="header">
+            <h3 class="text-muted">{{session['feature1']}}</h3>
+        </div>
+        <form action="/single" method="post" name="location">
+            <h5 class="text-muted">Please select the genome location</h5>
+            <label>Chromosome:</label>
+            <input type="text" name="chr" maxlength="30" value="" placeholder="e.g. chr1"/>
+            <label>Start:</label>
+            <input type="number" name="start" maxlength="30" value="" />
+            <label>End:</label>
+            <input type="number" name="end" maxlength="30" value="" />
+            <input type = "submit"/>
+        </form>
+
+        <footer class="footer">
+            <p>&copy; Kaifu Chen lab 2017, Houston Methodist</p>
+        </footer>
+    </body>
+</html>

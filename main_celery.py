@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, session
 from queryUtils import GEO_query
 from search import Search
 from match import Match
@@ -20,6 +20,7 @@ app.config.update(
     MAIL_USERNAME='chenlabhoustonmethodist@gmail.com',
     MAIL_PASSWORD='R10-414D'
 )
+app.secret_key = 'R10-414D'
 
 celery = make_celery(app)
 mail = Mail(app)
@@ -39,6 +40,55 @@ def showMatch():
 @app.route('/query')
 def showQuery():
     return render_template('query.html')
+
+@app.route('/display')
+def showDisplay():
+    return render_template('display.html')
+
+@app.route('/double')
+def showDouble():
+    return render_template('double.html')
+
+@app.route('/single')
+def showSingle():
+    return render_template('single.html')
+
+@app.route('/double', methods=['POST'])
+def reloadDouble():
+    chr = request.form['chr']
+    start = request.form['start']
+    end = request.form['end']
+    session['src1'] = 'http://genome.ucsc.edu/cgi-bin/hgRenderTracks?db=hg19&position='+chr+'%3A'+start+'-' + end
+    session['src2'] = 'http://genome.ucsc.edu/cgi-bin/hgRenderTracks?db=hg19&position='+chr+'%3A'+start+'-' + end
+    return render_template('reloadDouble.html')
+
+@app.route('/display', methods=['POST'])
+def selectFeatures():
+    if 'feature1' in request.form or 'feature2' in request.form:
+        _feature1 = request.form['feature1']
+        _feature2 = request.form['feature2']
+        if _feature1 == "" and _feature2 == "":
+            session['feature1'] = 'H3K4me3'
+            return render_template('single.html')
+        elif _feature2 == "" or _feature1 == "":
+            if _feature1 == "":
+                session['feature2'] = ""
+                session['feature1'] = _feature2
+            else:
+                session['feature2'] = ""
+                session['feature1'] = _feature1
+            return render_template('single.html')
+        else:
+            if _feature1 != _feature2:
+                session['feature2'] = _feature2
+                session['feature1'] = _feature1
+                return render_template('double.html')
+            else:
+                session['feature1'] = _feature1
+                session['feature2'] = ""
+                return render_template('single.html')
+    else:
+        return render_template('display.html')
 
 @app.route('/search',methods=['POST'])
 def search():
@@ -138,6 +188,10 @@ def send_email(email, results, output_path, output_names):
     for name in output_names:
         os.system('rm '+output_path+name)
     return
+
+def features():
+    session['feature1'] = ''
+    session['feature2'] = ''
 
 if __name__ == "__main__":
     app.run()

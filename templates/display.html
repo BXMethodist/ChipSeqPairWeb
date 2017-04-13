@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<!--
+To change this license header, choose License Headers in Project Properties.
+To change this template file, choose Tools | Templates
+and open the template in the editor.
+-->
+<html>
+    <head>
+    <title>One or Two features</title>
+
+
+    <link href="http://getbootstrap.com/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <link href="http://getbootstrap.com/examples/jumbotron-narrow/jumbotron-narrow.css" rel="stylesheet">
+    </head>
+    <body>
+        <div class="header">
+            <h3 class="text-muted">Please select the genome features</h3>
+        </div>
+        <form action="/display" method="post" name="feature">
+            <select name="feature1" id="feature1">
+                <option value="">Select...</option>
+                <option value="H3K4me3">H3K4me3</option>
+                <option value="H3K27me3">H3K27me3</option>
+            </select>
+            <select name="feature2" id="feature2">
+                <option value="">Select...</option>
+                <option value="H3K4me3">H3K4me3</option>
+                <option value="H3K27me3">H3K27me3</option>
+            </select>
+            <input type="submit" name="submit" value="Submit" />
+        </form>
+
+
+        <footer class="footer">
+            <p>&copy; Kaifu Chen lab 2017, Houston Methodist</p>
+        </footer>
+    </body>
+</html>
