@@ -21,7 +21,7 @@ SOFTWARE.
 """
 
 import re
-from urllib.request import urlopen
+from urllib2 import urlopen
 
 def search_term_to_GSM(terms):
     result_ids = set()
@@ -39,7 +39,7 @@ def search_term_to_GSM(terms):
         gsm_url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=gds&version=2.0&id=" + ids
 
         f = urlopen(gsm_url)
-        content = str(f.read(), 'utf-8')
+        content = str(f.read())
         cur_gsms = [x.strip() for x in re.findall('\sGSM[0-9]+\s', content)]
         result_gsms = result_gsms.union(cur_gsms)
     gsms = set()

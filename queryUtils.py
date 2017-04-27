@@ -23,7 +23,7 @@ SOFTWARE.
 import pandas as pd
 import pickle
 import numpy as np
-from urllib.request import urlopen
+from urllib2 import urlopen
 
 def load_obj(name):
     with open(name, 'rb') as f:
@@ -99,7 +99,7 @@ def GEO_query(names, output_name, GSM_GSE_pkl, GSM_SRR_pkl, email=None):
                 info = web.readlines()
                 web.close()
                 for line in info:
-                    line = str(line, 'utf-8')
+                    line = str(line)
                     if line.startswith('!Sample_relation') and line.find('SRX') != -1:
                         SRX = line[line.find('SRX'):].strip()
                         df = geo_metadata(SRX)
