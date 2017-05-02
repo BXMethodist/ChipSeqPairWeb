@@ -10,16 +10,31 @@ import os
 app = Flask(__name__)
 app.config['CELERY_BROKER_URL'] = 'amqp://localhost//'
 
+# app.config.update(
+#     DEBUG = True,
+#     MAIL_SERVER = 'ismtp.tmh.tmhs',
+#     MAIL_PORT = 80,
+#     MAIL_USE_SSL=True,
+#     MAIL_USE_TLS=False,
+#     MAIL_DEFAULT_SENDER=('Chen Lab', 'bxia@houstonmethodist.org'),
+#     # MAIL_MAX_EMAIL=10,
+#     MAIL_USERNAME='bxia@houstonmethodist.org',
+#     MAIL_PASSWORD='20120330Xb.'
+#
+# )
+
 app.config.update(
     DEBUG = False,
     MAIL_SERVER = 'smtp.gmail.com',
     MAIL_PORT = 465,
+    # MAIL_PORT = 25,
     MAIL_USE_SSL=True,
     MAIL_DEFAULT_SENDER=('Chen Lab', 'chenlabhoustonmethodist@gmail.com'),
     MAIL_MAX_EMAIL=10,
     MAIL_USERNAME='chenlabhoustonmethodist@gmail.com',
     MAIL_PASSWORD='R10-414D'
 )
+
 app.secret_key = 'R10-414D'
 
 celery = make_celery(app)
@@ -181,7 +196,7 @@ def send_email(email, results, output_path, output_names):
     for i in range(len(results)):
         table = results[i]
         output_name = output_names[i]
-        table.to_csv(output_path+output_name)
+        table.to_csv(output_path+output_name, encoding='utf-8')
         with app.open_resource(output_path+output_name) as table_file:
             msg.attach(output_name, output_name.replace('.','/'), table_file.read())
     mail.send(msg)
