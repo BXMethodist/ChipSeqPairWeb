@@ -1,0 +1,200 @@
+<!--<html>-->
+<!--<SCRIPT language="javascript" type="text/javascript" src="../static/js/jquery-3.2.0.min.js"></SCRIPT>-->
+   <!--<body>-->
+
+<!--<p>Hover over a rect = mouseover</p>-->
+<!--<p>Click on a rect = mouseclick</p>-->
+<!--<canvas id="canvas1" width=300 height=300></canvas>-->
+<!--<canvas id="canvas2" width=300 height=300></canvas>-->
+
+   <!--<script>-->
+        <!--//-->
+        <!--var rect = (function () {-->
+
+            <!--// constructor-->
+            <!--function rect(id, x, y, width, height, fill, stroke, strokewidth, ctx) {-->
+                <!--this.x = x;-->
+                <!--this.y = y;-->
+                <!--this.id = id;-->
+                <!--this.width = width;-->
+                <!--this.height = height;-->
+                <!--this.fill = fill || "gray";-->
+                <!--this.stroke = stroke || "skyblue";-->
+                <!--this.ctx = ctx-->
+                <!--this.strokewidth = strokewidth || 2;-->
+                <!--this.redraw(this.x, this.y);-->
+                <!--return (this);-->
+            <!--}-->
+            <!--rect.prototype.redraw = function (x, y) {-->
+                <!--this.x = x || this.x;-->
+                <!--this.y = y || this.y;-->
+                <!--this.draw(this.stroke, this.ctx);-->
+                <!--return (this);-->
+            <!--}-->
+            <!--//-->
+            <!--rect.prototype.highlight = function (x, y) {-->
+                <!--this.x = x || this.x;-->
+                <!--this.y = y || this.y;-->
+                <!--this.draw("orange", this.ctx);-->
+                <!--return (this);-->
+            <!--}-->
+            <!--//-->
+            <!--rect.prototype.draw = function (stroke, ctx) {-->
+                <!--ctx.save();-->
+                <!--ctx.beginPath();-->
+                <!--ctx.fillStyle = this.fill;-->
+                <!--ctx.strokeStyle = stroke;-->
+                <!--ctx.lineWidth = this.strokewidth;-->
+                <!--ctx.rect(this.x, this.y, this.width, this.height);-->
+                <!--ctx.stroke();-->
+                <!--ctx.fill();-->
+                <!--ctx.restore();-->
+            <!--}-->
+            <!--//-->
+            <!--rect.prototype.isPointInside = function (x, y) {-->
+                <!--return (x >= this.x && x <= this.x + this.width && y >= this.y && y <= this.y + this.height);-->
+            <!--}-->
+            <!--return rect;-->
+        <!--})();-->
+
+
+        <!--//-->
+        <!--function handleMouseDown(e) {-->
+            <!--mouseX = parseInt(e.clientX - e.data.offsetX);-->
+            <!--mouseY = parseInt(e.clientY - e.data.offsetY);-->
+
+            <!--// Put your mousedown stuff here-->
+            <!--var clicked = "";-->
+            <!--for (var i = 0; i < e.data.rects.length; i++) {-->
+                <!--if (e.data.rects[i].isPointInside(mouseX, mouseY)) {-->
+                    <!--clicked += e.data.rects[i].id + " "-->
+                <!--}-->
+            <!--}-->
+            <!--if (clicked.length > 0) {-->
+                <!--alert("Clicked rectangles: " + clicked);-->
+            <!--}-->
+        <!--}-->
+
+        <!--//-->
+        <!--function handleMouseMove(e) {-->
+            <!--mouseX = parseInt(e.clientX - e.data.offsetX);-->
+            <!--mouseY = parseInt(e.clientY - e.data.offsetY);-->
+
+            <!--// Put your mousemove stuff here-->
+            <!--e.data.ctx.clearRect(0, 0, e.data.canvas.width, e.data.canvas.height);-->
+            <!--for (var i = 0; i < e.data.rects.length; i++) {-->
+                <!--if (e.data.rects[i].isPointInside(mouseX, mouseY)) {-->
+                    <!--e.data.rects[i].highlight();-->
+                <!--} else {-->
+                    <!--e.data.rects[i].redraw();-->
+                <!--}-->
+            <!--}-->
+        <!--}-->
+
+        <!--var canvas1 = document.getElementById("canvas1");-->
+        <!--var ctx1 = canvas1.getContext("2d");-->
+        <!--var canvasOffset1 = $("#canvas1").offset();-->
+        <!--var offsetX1 = canvasOffset1.left;-->
+        <!--var offsetY1 = canvasOffset1.top;-->
+
+        <!--//-->
+        <!--var rects1 = [];-->
+        <!--//-->
+        <!--rects1.push(new rect("Red-Rectangle", 15, 35, 65, 60, "red", "black", 10, ctx1));-->
+        <!--rects1.push(new rect("Green-Rectangle", 60, 80, 70, 50, "green", "black", 10, ctx1));-->
+        <!--rects1.push(new rect("Blue-Rectangle", 125, 25, 25, 25, "blue", "black", 10, ctx1));-->
+
+        <!--//-->
+        <!--$("#canvas1").click({offsetX:offsetX1, offsetY:offsetY1, rects:rects1}, handleMouseDown);-->
+        <!--$("#canvas1").mousemove( {offsetX:offsetX1, offsetY:offsetY1, rects:rects1, ctx:ctx1, canvas:canvas1}, handleMouseMove);-->
+
+        <!--var canvas2 = document.getElementById("canvas2");-->
+        <!--var ctx2 = canvas2.getContext("2d");-->
+        <!--var canvasOffset2 = $("#canvas2").offset();-->
+        <!--var offsetX2 = canvasOffset2.left;-->
+        <!--var offsetY2 = canvasOffset2.top;-->
+
+        <!--var rects2 = [];-->
+        <!--//-->
+        <!--rects2.push(new rect("Red-Rectangle", 15, 35, 65, 60, "yellow", "black", 10, ctx2));-->
+        <!--rects2.push(new rect("Green-Rectangle", 60, 80, 70, 50, "cyan", "black", 10, ctx2));-->
+        <!--rects2.push(new rect("Blue-Rectangle", 125, 25, 25, 25, "orange", "black", 10, ctx2));-->
+
+        <!--//-->
+        <!--$("#canvas2").click({offsetX:offsetX2, offsetY:offsetY2, rects:rects2}, handleMouseDown);-->
+        <!--$("#canvas2").mousemove( {offsetX:offsetX2, offsetY:offsetY2, rects:rects2, ctx:ctx2, canvas:canvas2}, handleMouseMove);-->
+   <!--</script>-->
+
+   <!--</body>-->
+<!--</html>-->
+
+<!DOCTYPE html>
+<head>
+    <meta charset="utf-8">
+    <title>Resize HTML5 canvas dynamically | www.htmlcheats.com</title>
+	<style>
+		html, body {
+			width: 100%;
+			height: 100%;
+			margin: 0px;
+			border: 0;
+			overflow: hidden; /*  Disable scrollbars */
+			display: block;  /* No floating content on sides */
+		}
+	</style>
+</head>
+
+<body>
+
+	<canvas id='c' style = 'position: absolute; left: 0px; top: 0px;' >
+	</canvas>
+
+	<script>
+		(function() {
+			var
+				// Obtain a reference to the canvas element
+				// using its id.
+				htmlCanvas = document.getElementById('c'),
+
+			  	// Obtain a graphics context on the
+			  	// canvas element for drawing.
+			  	context = htmlCanvas.getContext('2d');
+
+			// Start listening to resize events and
+			// draw canvas.
+			initialize();
+
+			function initialize() {
+				// Register an event listener to
+				// call the resizeCanvas() function each time
+				// the window is resized.
+				window.addEventListener('resize', resizeCanvas, false);
+
+				// Draw canvas border for the first time.
+				resizeCanvas();
+			}
+
+			// Display custom canvas.
+			// In this case it's a blue, 5 pixel border that
+			// resizes along with the browser window.
+			function redraw() {
+				context.strokeStyle = 'blue';
+				context.lineWidth = '5';
+				context.strokeRect(0, 0, window.innerWidth, window.innerHeight);
+			}
+
+			// Runs each time the DOM window resize event fires.
+			// Resets the canvas dimensions to match window,
+			// then draws the new borders accordingly.
+			function resizeCanvas() {
+				htmlCanvas.width = window.innerWidth;
+				htmlCanvas.height = window.innerHeight;
+				redraw();
+			}
+
+		})();
+	</script>
+
+</body>
+
+</html>

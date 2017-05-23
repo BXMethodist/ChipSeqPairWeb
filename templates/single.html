@@ -14,11 +14,11 @@
         <form action="/single" method="post" name="location">
             <h5 class="text-muted">Please select the genome location</h5>
             <label>Chromosome:</label>
-            <input type="text" name="chr" maxlength="30" value="" placeholder="e.g. chr1"/>
+            <input type="text" name="chr" maxlength="30" value="" placeholder="{{session['chr']}}" />
             <label>Start:</label>
-            <input type="number" name="start" maxlength="30" value="" />
+            <input type="number" name="start" maxlength="30" value="" placeholder="{{session['start']}}" />
             <label>End:</label>
-            <input type="number" name="end" maxlength="30" value="" />
+            <input type="number" name="end" maxlength="30" value="" placeholder="{{session['end']}}" />
             <input type = "submit"/>
         </form>
 

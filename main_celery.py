@@ -1,10 +1,11 @@
-from flask import Flask, render_template, request, session
+from flask import Flask, render_template, request, session, redirect
 from queryUtils import GEO_query
 from search import Search
 from match import Match
 from setup import get_settings
 from flask_celery import make_celery
 from flask_mail import Mail, Message
+import json, bisect
 import os
 
 app = Flask(__name__)
@@ -27,7 +28,6 @@ app.config.update(
     DEBUG = False,
     MAIL_SERVER = 'smtp.gmail.com',
     MAIL_PORT = 465,
-    # MAIL_PORT = 25,
     MAIL_USE_SSL=True,
     MAIL_DEFAULT_SENDER=('Chen Lab', 'chenlabhoustonmethodist@gmail.com'),
     MAIL_MAX_EMAIL=10,
@@ -36,6 +36,34 @@ app.config.update(
 )
 
 app.secret_key = 'R10-414D'
+
+web_regions = open('100_10_2200_web_map.txt', 'r')
+refmap = json.load(web_regions)
+web_regions.close()
+
+regions = set()
+for chromosome in refmap.keys():
+    # print chromosome
+    for value in refmap[chromosome].values():
+        regions.add((chromosome, int(value[0]), int(value[1]), int(value[2])))
+
+refmap = {}
+for region in regions:
+    if region[0] in refmap:
+        refmap[region[0]][region[1]] = tuple(region[1:])
+        refmap[region[0]][region[2]] = tuple(region[1:])
+    else:
+        refmap[region[0]] = {}
+        refmap[region[0]][region[1]] = tuple(region[1:])
+        refmap[region[0]][region[2]] = tuple(region[1:])
+
+link1p1 = 'https://genome.ucsc.edu/cgi-bin/hgTracks?db=hg19&lastVirtModeType=default&lastVirtModeExtraState=&virtModeType=default&virtMode=0&nonVirtPosition=&position='
+link1p2 = '&hgsid=592956077_CVVkc6h19x28wA4sfPbMFib1ahy8'
+
+link2p1 = 'http://genome.ucsc.edu/cgi-bin/hgTracks?db=hg19&lastVirtModeType=default&lastVirtModeExtraState=&virtModeType=default&virtMode=0&nonVirtPosition=&position='
+link2p2 = '&hgsid=592956655_AjzBZdhCumAb8s6VcTs8mnMTyh7n'
+
+
 
 celery = make_celery(app)
 mail = Mail(app)
@@ -58,10 +86,25 @@ def showQuery():
 
 @app.route('/display')
 def showDisplay():
+    session['chr'] = 'chr1'
+    session['start'] = '100'
+    session['end'] = '10000'
+    chr_sizes = open('chr_sizes.txt', 'r')
+    session['sizes'] = json.load(chr_sizes)
+    chr_sizes.close()
+
+    peaks1 = find_regions(refmap, session['chr'], int(session['start']), int(session['end']))
+    # print peaks1
+    session['peaks1'] = peaks1
+
+    session['peaks2'] = peaks1
+
+    # print session['sizes']
     return render_template('display.html')
 
 @app.route('/double')
 def showDouble():
+    print 'double'
     return render_template('double.html')
 
 @app.route('/single')
@@ -70,18 +113,232 @@ def showSingle():
 
 @app.route('/double', methods=['POST'])
 def reloadDouble():
-    chr = request.form['chr']
+    # print refmap.keys()
+    # for key in request.form.keys():
+    # print request.form
+    # print request.form['L1.5x'] == 'L1.5x'
+    # print request.form
+    if 'submit' in request.form and request.form['submit'] == 'Submit':
+        # print 'submit'
+        chromosome = request.form['chr'] if request.form['chr'] != '' else session['chr']
+        start = request.form['start'] if request.form['start'] != '' else session['start']
+        end = request.form['end'] if request.form['end'] != '' else session['end']
+        if int(start) < 1:
+            start = '1'
+        if int(end) > int(session['sizes'][chromosome]):
+            end = str(session['sizes'][chromosome])
+        session['chr'] = chromosome
+        session['start'] = start
+        session['end'] = end
+        session['src1'] = 'http://genome.ucsc.edu/cgi-bin/hgRenderTracks?db=hg19&position='+chromosome+'%3A'+start+'-' + end
+        session['src2'] = 'http://genome.ucsc.edu/cgi-bin/hgRenderTracks?db=hg19&position='+chromosome+'%3A'+start+'-' + end
+
+    elif 'L1.5x' in request.form and request.form['L1.5x'] == 'L1.5x':
+        chromosome = session['chr']
+        start = session['start']
+        end = session['end']
+
+        mid = (int(end) + int(start)) / 2
+
+        next_start = str(mid - int((int(end) - int(start))*2/3/2)/50*50)
+        next_end = str(mid + int((int(end) - int(start))*2/3/2)/50*50)
+
+        if int(next_end) - int(next_start) <= 0:
+            pass
+        else:
+            start = next_start
+            end = next_end
+
+        if int(start) < 1:
+            start = '1'
+        if int(end) > int(session['sizes'][chromosome]):
+            end = str(session['sizes'][chromosome])
+
+        session['chr'] = chromosome
+        session['start'] = start
+        session['end'] = end
+        session[
+            'src1'] = 'http://genome.ucsc.edu/cgi-bin/hgRenderTracks?db=hg19&position=' + chromosome + '%3A' + start + '-' + end
+        session[
+            'src2'] = 'http://genome.ucsc.edu/cgi-bin/hgRenderTracks?db=hg19&position=' + chromosome + '%3A' + start + '-' + end
+    elif 'L3x' in request.form and request.form['L3x'] == 'L3x':
+        chromosome = session['chr']
+        start = session['start']
+        end = session['end']
+
+        mid = (int(end)+int(start))/2
+
+        next_start = str(mid - int((int(end) - int(start))/3/2)/50*50) if int(end) - int(start) != 0 else start
+        next_end = str(mid + int((int(end) - int(start))/3/2)/50*50) if int(end) - int(start) != 0 else end
+
+        if int(next_end) - int(next_start) <= 0:
+            pass
+        else:
+            start = next_start
+            end = next_end
+
+        if int(start) < 1:
+            start = '1'
+        if int(end) > int(session['sizes'][chromosome]):
+            end = str(session['sizes'][chromosome])
+
+        session['chr'] = chromosome
+        session['start'] = start
+        session['end'] = end
+        session[
+            'src1'] = 'http://genome.ucsc.edu/cgi-bin/hgRenderTracks?db=hg19&position=' + chromosome + '%3A' + start + '-' + end
+        session[
+            'src2'] = 'http://genome.ucsc.edu/cgi-bin/hgRenderTracks?db=hg19&position=' + chromosome + '%3A' + start + '-' + end
+    elif 'L10x' in request.form and request.form['L10x'] == 'L10x':
+        chromosome = session['chr']
+        start = session['start']
+        end = session['end']
+
+        mid = (int(end) + int(start)) / 2
+
+        next_start = str(mid - int((int(end) - int(start))/10/2)/50*50) if int(end) - int(start) != 0 else start
+        next_end = str(mid + int((int(end) - int(start))/10/2)/50*50) if int(end) - int(start) != 0 else end
+
+        if int(next_end) - int(next_start) <= 0:
+            pass
+        else:
+            start = next_start
+            end = next_end
+
+        if int(start) < 1:
+            start = '1'
+        if int(end) > int(session['sizes'][chromosome]):
+            end = str(session['sizes'][chromosome])
+
+        session['chr'] = chromosome
+        session['start'] = start
+        session['end'] = end
+        session[
+            'src1'] = 'http://genome.ucsc.edu/cgi-bin/hgRenderTracks?db=hg19&position=' + chromosome + '%3A' + start + '-' + end
+        session[
+            'src2'] = 'http://genome.ucsc.edu/cgi-bin/hgRenderTracks?db=hg19&position=' + chromosome + '%3A' + start + '-' + end
+    elif 'S1.5x' in request.form and request.form['S1.5x'] == 'S1.5x':
+        chromosome = session['chr']
+        start = session['start']
+        end = session['end']
+
+        mid = (int(end) + int(start)) / 2
+
+        next_start = str(mid - int((int(end) - int(start)) * 3 / 2 / 2) / 50 * 50)
+        next_end = str(mid + int((int(end) - int(start)) * 3 / 2 / 2) / 50 * 50)
+
+        if int(next_end) - int(next_start) <= 0:
+            pass
+        else:
+            start = next_start
+            end = next_end
+
+        if int(start) < 1:
+            start = '1'
+        if int(end) > int(session['sizes'][chromosome]):
+            end = str(session['sizes'][chromosome])
+
+        session['chr'] = chromosome
+        session['start'] = start
+        session['end'] = end
+        session[
+            'src1'] = 'http://genome.ucsc.edu/cgi-bin/hgRenderTracks?db=hg19&position=' + chromosome + '%3A' + start + '-' + end
+        session[
+            'src2'] = 'http://genome.ucsc.edu/cgi-bin/hgRenderTracks?db=hg19&position=' + chromosome + '%3A' + start + '-' + end
+    elif 'S3x' in request.form and request.form['S3x'] == 'S3x':
+        chromosome = session['chr']
+        start = session['start']
+        end = session['end']
+
+        mid = (int(end) + int(start)) / 2
+
+        next_start = str(mid - int((int(end) - int(start)) * 3 / 2) / 50 * 50) if int(end) - int(start) != 0 else start
+        next_end = str(mid + int((int(end) - int(start)) * 3 / 2) / 50 * 50) if int(end) - int(start) != 0 else end
+
+        if int(next_end) - int(next_start) <= 0:
+            pass
+        else:
+            start = next_start
+            end = next_end
+
+        if int(start) < 1:
+            start = '1'
+        if int(end) > int(session['sizes'][chromosome]):
+            end = str(session['sizes'][chromosome])
+
+        session['chr'] = chromosome
+        session['start'] = start
+        session['end'] = end
+        session[
+            'src1'] = 'http://genome.ucsc.edu/cgi-bin/hgRenderTracks?db=hg19&position=' + chromosome + '%3A' + start + '-' + end
+        session[
+            'src2'] = 'http://genome.ucsc.edu/cgi-bin/hgRenderTracks?db=hg19&position=' + chromosome + '%3A' + start + '-' + end
+    elif 'S10x' in request.form and request.form['S10x'] == 'S10x':
+        chromosome = session['chr']
+        start = session['start']
+        end = session['end']
+
+        mid = (int(end) + int(start)) / 2
+
+        next_start = str(mid - int((int(end) - int(start)) * 10 / 2) / 50 * 50) if int(end) - int(start) != 0 else start
+        next_end = str(mid + int((int(end) - int(start)) * 10 / 2) / 50 * 50) if int(end) - int(start) != 0 else end
+
+        if int(next_end) - int(next_start) <= 0:
+            pass
+        else:
+            start = next_start
+            end = next_end
+
+        if int(start) < 1:
+            start = '1'
+        # print int(end), int(session['sizes'][chromosome])
+        if int(end) > int(session['sizes'][chromosome]):
+            end = str(session['sizes'][chromosome])
+
+        session['chr'] = chromosome
+        session['start'] = start
+        session['end'] = end
+        session[
+            'src1'] = 'http://genome.ucsc.edu/cgi-bin/hgRenderTracks?db=hg19&position=' + chromosome + '%3A' + start + '-' + end
+        session[
+            'src2'] = 'http://genome.ucsc.edu/cgi-bin/hgRenderTracks?db=hg19&position=' + chromosome + '%3A' + start + '-' + end
+
+    ## current just use one map
+    peaks1 = find_regions(refmap, session['chr'], int(session['start']), int(session['end']))
+    # print peaks1
+    session['peaks1'] = peaks1
+
+    session['peaks2'] = peaks1
+
+    return redirect("double")
+
+@app.route('/single', methods=['POST'])
+def reloadSingle():
+    chromosome = request.form['chr']
     start = request.form['start']
     end = request.form['end']
-    session['src1'] = 'http://genome.ucsc.edu/cgi-bin/hgRenderTracks?db=hg19&position='+chr+'%3A'+start+'-' + end
-    session['src2'] = 'http://genome.ucsc.edu/cgi-bin/hgRenderTracks?db=hg19&position='+chr+'%3A'+start+'-' + end
-    return render_template('reloadDouble.html')
+    session['chr'] = chromosome
+    session['start'] = start
+    session['end'] = end
+    session['src1'] = 'http://genome.ucsc.edu/cgi-bin/hgRenderTracks?db=hg19&position='+chromosome+'%3A'+start+'-' + end
+    return render_template('reloadSingle.html')
 
 @app.route('/display', methods=['POST'])
 def selectFeatures():
+    # print 'display'
     if 'feature1' in request.form or 'feature2' in request.form:
         _feature1 = request.form['feature1']
         _feature2 = request.form['feature2']
+
+        chromosome = session['chr']
+        start = session['start']
+        end = session['end']
+
+        session[
+            'src1'] = 'http://genome.ucsc.edu/cgi-bin/hgRenderTracks?db=hg19&position=' + chromosome + '%3A' + start + '-' + end
+        session[
+            'src2'] = 'http://genome.ucsc.edu/cgi-bin/hgRenderTracks?db=hg19&position=' + chromosome + '%3A' + start + '-' + end
+
         if _feature1 == "" and _feature2 == "":
             session['feature1'] = 'H3K4me3'
             return render_template('single.html')
@@ -207,6 +464,33 @@ def send_email(email, results, output_path, output_names):
 def features():
     session['feature1'] = ''
     session['feature2'] = ''
+
+def find_regions(modificationmap, chr, start, end):
+    # print type(refmap['chr1'].keys()[0]),refmap['chr1'].keys()[0]
+    index = sorted(modificationmap[chr].keys())
+
+    total_width = end - start
+    start_index = bisect.bisect(index, start)
+    end_index = bisect.bisect(index, end)
+
+    # print start_index, end_index
+    if start_index == end_index:
+        start_index -= 1
+
+    peaks = set()
+    for i in index[start_index:end_index]:
+        peak = modificationmap[chr][i]
+        # print peak
+        peak_start = round((peak[0]-start)*1.0/total_width,2) if round((peak[0]-start)*1.0/total_width,2) >=0 else 0
+        peak_end = round((peak[1]-start)*1.0/total_width,2) if round((peak[1]-start)*1.0/total_width,2) <=1 else 1
+        # peak_color = 'blue' if peak[2] == 0 else 'red'
+        cur_peak = (peak[0], peak[1], peak_start, peak_end-peak_start, peak[2])
+        # print cur_peak
+        peaks.add(cur_peak)
+    if len(peaks) > 10:
+        return []
+    # print json.dumps(list(peaks))
+    return json.dumps(list(peaks))
 
 if __name__ == "__main__":
     app.run()
