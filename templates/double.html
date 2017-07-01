@@ -41,20 +41,16 @@
             <h3 class="text-muted">{{session['feature1']}} VS {{session['feature2']}}</h3>
         </div>
         <form action="/double" method="POST" name="location" onsubmit="return double.reload()">
-            <label>Chromosome: {{session['chr']}}</label>
-            <br>
-            <label>Start: {{session['start']}}</label>
-            <br>
+            <label>Chr: {{session['chr']}}</label>&nbsp;
+            <label>Start: {{session['start']}}</label>&nbsp;
             <label>End: {{session['end']}}</label>
             <br>
-            <label>Chromosome:</label>
-            <input type="text" name="chr" id="chr" maxlength="30" value="" placeholder="{{session['chr']}}" />
-            <br>
+            <label>Chr:</label>
+            <input type="text" name="chr" id="chr" size="6" value="" placeholder="{{session['chr']}}" />
             <label>Start:</label>
-            <input type="number" name="start" id="start" maxlength="30" value="" placeholder="{{session['start']}}" />
-            <br>
+            <input type="number" name="start" id="start" size="6" maxlength="6" value="" placeholder="{{session['start']}}" />
             <label>End:</label>
-            <input type="number" name="end" id="end" maxlength="30" value="" placeholder="{{session['end']}}" />
+            <input type="number" name="end" id="end" size="6" maxlength="6" value="" placeholder="{{session['end']}}" />
             <br>
             <input type = "submit" name="submit" />
             &nbsp;
@@ -65,15 +61,14 @@
             <input type="submit" name="L3x" id="L3x" maxlength="30" value="L3x">
             <input type="submit" name="L10x" id="L10x" maxlength="30" value="L10x">
             &nbsp;
-            <br>
             <label>zoom out</label>&nbsp;
             <input type="submit" name="S1.5x" id="S1.5x" maxlength="30" value="S1.5x">
             <input type="submit" name="S3x" id="S3x" maxlength="30" value="S3x">
             <input type="submit" name="S10x" id="S10x" maxlength="30" value="S10x">
         </form>
         <div id="container" style="clear: both">
-            <h3 class="text-muted" style='float: left; margin-left:22.5%'>{{session['feature1']}}</h3>
-            <h3 class="text-muted" style='float: right; margin-right:20%'>{{session['feature2']}}</h3>
+            <h3 class="text-muted" style='float: left; margin-left:24%'>{{session['feature1']}}</h3>
+            <h3 class="text-muted" style='float: right; margin-right:6%'>{{session['feature2']}}</h3>
         </div>
         <div id="canvas_container" style="clear: both">
             <canvas id="canvas1" style='float: left;border:1px solid #d3d3d3;'></canvas>
@@ -177,81 +172,115 @@
                 }
             }
 
-            <!--function canvasReSize(c) {-->
-                <!--initialize();-->
-                <!--function initialize(){-->
-                    <!--window.addEventListener('resize', resizeCanvas, false);-->
-                    <!--resizeCanvas();-->
-                <!--}-->
+            function resizeCanvas(peakCanvases) {
+                console.log("resizing");
+                for (j=0; j < peakCanvases.length; j++){
+                    peakCanvas = peakCanvases[j];
+                    peakCanvas.cav.width = window.innerWidth*0.31;
+                    console.log(window.innerWidth*0.31);
+                    console.log(peakCanvas.cav.width);
+                    peakCanvas.cav.height = 10;
+                    peakCanvas.cav.style.marginLeft = window.innerWidth * peakCanvas.marginLeft;
+                    peakCanvas.cav.style.marginRight = window.innerWidth * peakCanvas.marginRight;
 
-                <!--function redraw() {-->
-                    <!--context.strokeStyle = 'blue';-->
-                    <!--context.lineWidth = '5';-->
-                    <!--context.strokeRect(0, 0, window.innerWidth, window.innerHeight);-->
-			    <!--}-->
-                <!--function resizeCanvas() {-->
-                    <!--c.width = window.innerWidth;-->
-                    <!--c.height = window.innerHeight;-->
-                    <!--redraw();-->
-			    <!--}-->
+                    var cur_rects = [];
+                    for (i=0; i < peakCanvas.peaks_id.length;i++){
+                        if (peakCanvas.peaks_id[i][4] == 1){
+                            var color = "red";
+                        } else {
+                            var color = "blue";
+                        }
+
+                        cur_rects.push(new rect(peakCanvas.chromosome+"_"+peakCanvas.peaks_id[i][0].toString()+"_"+peakCanvas.peaks_id[i][1].toString(), peakCanvas.peaks_id[i][2] * peakCanvas.cav.width, 0, peakCanvas.peaks_id[i][3] * peakCanvas.cav.width, 10, color, "black", 1, peakCanvas.cav.ctx));
+                    }
+                    $("#" + peakCanvas.id).click({offsetX:peakCanvas.offsetX, offsetY:peakCanvas.offsetY, rects:cur_rects}, handleMouseDown);
+                    $("#" + peakCanvas.id).mousemove({offsetX:peakCanvas.offsetX, offsetY:peakCanvas.offsetY, rects:cur_rects, ctx:peakCanvas.cav.ctx, canvas:peakCanvas.cav}, handleMouseMove);
+                }
+			};
+
+            function peakCanvas(id, marginLeft, marginRight, peaks_id, chromosome) {
+                this.id = id;
+                this.cav = document.getElementById(id);
+                this.cav.width = window.innerWidth*0.31;
+                this.cav.height = 10;
+                this.marginLeft = marginLeft;
+                this.marginRight = marginRight;
+                this.cav.style.marginLeft = window.innerWidth * this.marginLeft;
+                this.cav.style.marginRight = window.innerWidth * this.marginRight;
+                this.cav.ctx = this.cav.getContext("2d");
+                this.canvasOffset = $("#" + this.id).offset();
+                this.offsetX = this.canvasOffset.left;
+                this.offsetY = this.canvasOffset.top;
+                this.peaks_id = peaks_id;
+                this.chromosome = chromosome;
+            }
+
+            var doubleCanvases = [];
+            doubleCanvases.push(new peakCanvas("canvas1", 0.176, 0, JSON.parse("{{session['peaks1']}}"), "{{session['chr']}}"));
+            doubleCanvases.push(new peakCanvas("canvas2", 0, 0.017, JSON.parse("{{session['peaks1']}}"), "{{session['chr']}}"));
+
+            window.addEventListener('resize', function(){
+                resizeCanvas(doubleCanvases);
+            }, false);
+            resizeCanvas(doubleCanvases);
+
+
+
+            <!--var canvas1 = document.getElementById("canvas1");-->
+            <!--canvas1.width = window.innerWidth*0.31;-->
+            <!--canvas1.height = 10;-->
+            <!--canvas1.style.marginLeft = window.innerWidth*0.176-->
+
+            <!--var ctx1 = canvas1.getContext("2d");-->
+            <!--var canvasOffset1 = $("#canvas1").offset();-->
+            <!--var offsetX1 = canvasOffset1.left;-->
+            <!--var offsetY1 = canvasOffset1.top;-->
+
+            <!--//-->
+
+            <!--var peaks1 = JSON.parse("{{session['peaks1']}}");-->
+
+            <!--var rects1 = [];-->
+            <!--for (i=0; i < peaks1.length;i++){-->
+                <!--if (peaks1[i][4] == 1){-->
+                    <!--var color = "red";-->
+                <!--} else {-->
+                    <!--var color = "blue";-->
+                <!--}-->
+                <!--rects1.push(new rect("{{session['chr']}}"+"_"+peaks1[i][0].toString()+"_"+peaks1[i][1].toString(), peaks1[i][2]*canvas1.width, 0, peaks1[i][3]*canvas1.width, 10, color, "black", 1, ctx1));-->
+            <!--}-->
+            <!--//-->
+            <!--//-->
+            <!--$("#canvas1").click({offsetX:offsetX1, offsetY:offsetY1, rects:rects1}, handleMouseDown);-->
+            <!--$("#canvas1").mousemove( {offsetX:offsetX1, offsetY:offsetY1, rects:rects1, ctx:ctx1, canvas:canvas1}, handleMouseMove);-->
+
+
+
+            <!--var canvas2 = document.getElementById("canvas2");-->
+
+            <!--canvas2.width = window.innerWidth*0.31;-->
+            <!--canvas2.height = 10;-->
+            <!--canvas2.style.marginRight = window.innerWidth*0.017-->
+
+            <!--var ctx2 = canvas2.getContext("2d");-->
+            <!--var canvasOffset2 = $("#canvas2").offset();-->
+            <!--var offsetX2 = canvasOffset2.left;-->
+            <!--var offsetY2 = canvasOffset2.top;-->
+
+            <!--var peaks2 = JSON.parse("{{session['peaks2']}}");-->
+
+            <!--var rects2 = [];-->
+            <!--for (i=0; i < peaks2.length;i++){-->
+                <!--if (peaks2[i][4] == 1){-->
+                    <!--var color = "red";-->
+                <!--} else {-->
+                    <!--var color = "blue";-->
+                <!--}-->
+                <!--rects2.push(new rect("{{session['chr']}}"+"_"+peaks2[i][0].toString()+"_"+peaks2[i][1].toString(), peaks2[i][2]*canvas2.width, 0, peaks2[i][3]*canvas2.width, 10, color, "black", 1, ctx2));-->
             <!--}-->
 
-
-
-
-            var canvas1 = document.getElementById("canvas1");
-            canvas1.width = window.innerWidth*0.424;
-            canvas1.height = 10;
-            canvas1.style.marginLeft = window.innerWidth*0.065
-
-            var ctx1 = canvas1.getContext("2d");
-            var canvasOffset1 = $("#canvas1").offset();
-            var offsetX1 = canvasOffset1.left;
-            var offsetY1 = canvasOffset1.top;
-
-            //
-
-            var peaks1 = JSON.parse("{{session['peaks1']}}");
-
-            var rects1 = [];
-            for (i=0; i < peaks1.length;i++){
-                if (peaks1[i][4] == 1){
-                    var color = "red";
-                } else {
-                    var color = "blue";
-                }
-                rects1.push(new rect("{{session['chr']}}"+"_"+peaks1[i][0].toString()+"_"+peaks1[i][1].toString(), peaks1[i][2]*canvas1.width, 0, peaks1[i][3]*canvas1.width, 10, color, "black", 1, ctx1));
-            }
-            //
-            //
-            $("#canvas1").click({offsetX:offsetX1, offsetY:offsetY1, rects:rects1}, handleMouseDown);
-            $("#canvas1").mousemove( {offsetX:offsetX1, offsetY:offsetY1, rects:rects1, ctx:ctx1, canvas:canvas1}, handleMouseMove);
-
-            var canvas2 = document.getElementById("canvas2");
-
-            canvas2.width = window.innerWidth*0.424;
-            canvas2.height = 10;
-            canvas2.style.marginRight = window.innerWidth*0.019
-
-            var ctx2 = canvas2.getContext("2d");
-            var canvasOffset2 = $("#canvas2").offset();
-            var offsetX2 = canvasOffset2.left;
-            var offsetY2 = canvasOffset2.top;
-
-            var peaks2 = JSON.parse("{{session['peaks2']}}");
-
-            var rects2 = [];
-            for (i=0; i < peaks2.length;i++){
-                if (peaks2[i][4] == 1){
-                    var color = "red";
-                } else {
-                    var color = "blue";
-                }
-                rects2.push(new rect("{{session['chr']}}"+"_"+peaks2[i][0].toString()+"_"+peaks2[i][1].toString(), peaks2[i][2]*canvas2.width, 0, peaks2[i][3]*canvas2.width, 10, color, "black", 1, ctx2));
-            }
-
-            $("#canvas2").click({offsetX:offsetX2, offsetY:offsetY2, rects:rects2}, handleMouseDown);
-            $("#canvas2").mousemove( {offsetX:offsetX2, offsetY:offsetY2, rects:rects2, ctx:ctx2, canvas:canvas2}, handleMouseMove);
+            <!--$("#canvas2").click({offsetX:offsetX2, offsetY:offsetY2, rects:rects2}, handleMouseDown);-->
+            <!--$("#canvas2").mousemove( {offsetX:offsetX2, offsetY:offsetY2, rects:rects2, ctx:ctx2, canvas:canvas2}, handleMouseMove);-->
 
 
 

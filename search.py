@@ -38,9 +38,15 @@ def Search(output_prefix, output_path, keywords, _Species, cwd, _inputEmail=None
 
     pattern = '|'.join(map(re.escape, keywords))
 
-    title_indexes = df[df.Title.str.lower().str.contains(pattern)].index
+    inputs_pattern = '|'.join(map(re.escape, ['input', 'control', 'IgG', 'WCE']))
 
-    antibody_indexes = df[df.Antibody.str.lower().str.contains(pattern)].index
+    title_indexes = df[(df.Title.str.lower().str.contains(pattern)) &
+                       (~((df.Title.str.lower().str.contains(inputs_pattern)) |
+                          (df.Antibody.str.lower().str.contains(inputs_pattern))))].index
+
+    antibody_indexes = df[(df.Antibody.str.lower().str.contains(pattern)) &
+                       (~((df.Title.str.lower().str.contains(inputs_pattern)) |
+                          (df.Antibody.str.lower().str.contains(inputs_pattern))))].index
 
     confidences = []
 

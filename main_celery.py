@@ -407,7 +407,7 @@ def match():
 @app.route('/query',methods=['GET', 'POST'])
 def query():
     f = request.files['IDlist']
-    info = [str(line, 'utf-8') for line in f.readlines()]
+    info = [str(line) for line in f.readlines()]
     _inputEmail = request.form['inputEmail']
     id_list = []
     for line in info:
