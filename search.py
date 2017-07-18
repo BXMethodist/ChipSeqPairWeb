@@ -38,7 +38,7 @@ def Search(output_prefix, output_path, keywords, _Species, cwd, _inputEmail=None
 
     pattern = '|'.join(map(re.escape, keywords))
 
-    inputs_pattern = '|'.join(map(re.escape, ['input', 'control', 'IgG', 'WCE']))
+    inputs_pattern = '|'.join(map(re.escape, ['input', 'control', 'igg', 'wce']))
 
     title_indexes = df[(df.Title.str.lower().str.contains(pattern)) &
                        (~((df.Title.str.lower().str.contains(inputs_pattern)) |
