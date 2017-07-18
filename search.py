@@ -83,10 +83,39 @@ def Search(output_prefix, output_path, keywords, _Species, cwd, _inputEmail=None
 
     samples = dfToSamples(result_df)
 
-    inputs, inputs_description = Input(output_prefix, output_path, keywords, _Species, GSEGSM_map, samples, df)
+    Category1, Category3, relatedSamples = Input(output_prefix, output_path, keywords, _Species, GSEGSM_map, samples, df)
+
+    inputs = []
+    inputs_descriptions = []
+
+    for sample_id in result_df.index:
+        input_id = ''
+        cur_description = ''
+        if sample_id in Category1:
+            input_ids = Category1[sample_id]
+            input_id = input_id + ','.join(list(input_ids))
+
+            for id in input_ids:
+                cur_title = relatedSamples[id].title
+                cur_description += 'Title:' + cur_title + '; '
+                cur_antibodies = json.dumps(relatedSamples[id].antibody)
+                cur_description += 'Antibody:'+ cur_antibodies
+
+        elif sample_id in Category3:
+            input_ids = Category3[sample_id]
+            input_id = input_id + ','.join(list(input_ids))
+
+            for id in input_ids:
+                cur_title = relatedSamples[id].title
+                cur_description += 'Title:' + cur_title + '; '
+                cur_antibodies = json.dumps(relatedSamples[id].antibody)
+                cur_description += 'Antibody:' + cur_antibodies
+        inputs.append(input_id)
+        inputs_descriptions.append(cur_description)
+
 
     result_df['Input'] = inputs
-    result_df['Input Description'] = inputs_description
+    result_df['Input Description'] = inputs_descriptions
 
     result_df = result_df.ix[:, ['Study_ID', 'Confidence','Data Description', 'Title', 'Antibody', 'Input',
                                  'Input Description', 'InstrumentModel', 'RawData', 'SequencingProtocol',
@@ -148,41 +177,22 @@ def Input(output_prefix, output_path,features, speices, GSEGSM_map, samples, df)
 
     relatedSamples = {}
 
+    # print(samples['GSM838673'].series)
+    # print(samples['GSM1424572'].series)
+
     for sample_id in samples.keys():
         cur_relatedGSEs = samples[sample_id].series
+
+        # if sample_id == 'GSM763422':
+        #     print(cur_relatedGSEs)
+
         for gse in cur_relatedGSEs:
             cur_relatedGSMs = GSEGSM_map[gse]
+            # if gse == 'GSE33912':
+            #     print(cur_relatedGSMs)
             for gsm in cur_relatedGSMs:
                 relatedSamples[gsm] = PandasToSample(gsm, df.ix[gsm, :])
 
     Category1, Category3 = input_finder(output_prefix, output_path, samples, GSEGSM_map, encodeGSE, relatedSamples,
                                         features, features_begin, ignorecase, speices)
-
-    inputs = []
-    inputs_descriptions = []
-
-    for sample_id in samples.keys():
-        input_id = ''
-        cur_description = ''
-        if sample_id in Category1:
-            input_ids = Category1[sample_id]
-            input_id = input_id + ','.join(list(input_ids))
-
-            for id in input_ids:
-                cur_title = relatedSamples[id].title
-                cur_description += 'Title:' + cur_title + '; '
-                cur_antibodies = json.dumps(relatedSamples[id].antibody)
-                cur_description += 'Antibody:'+ cur_antibodies
-
-        elif sample_id in Category3:
-            input_ids = Category3[sample_id]
-            input_id = input_id + ','.join(list(input_ids))
-
-            for id in input_ids:
-                cur_title = relatedSamples[id].title
-                cur_description += 'Title:' + cur_title + '; '
-                cur_antibodies = json.dumps(relatedSamples[id].antibody)
-                cur_description += 'Antibody:' + cur_antibodies
-        inputs.append(input_id)
-        inputs_descriptions.append(cur_description)
-    return inputs, inputs_descriptions
+    return Category1, Category3, relatedSamples

@@ -207,15 +207,7 @@ def input_finder(output_surffix, output_path, HumanSamples, groupByGSE, encodeGS
 
         # print feature_key_word
 
-        encode = False
-        for gse in sample.series:
-            if gse in encodeGSE:
-                encode = True
-                break
-        if encode:
-            targetGSEs = encodeGSE.union(set(sample.series))
-        else:
-            targetGSEs = set(sample.series)
+        targetGSEs = set(sample.series)
 
         bestMatchID = set()
         bestSimilarity = float("-inf")
@@ -262,6 +254,9 @@ def input_finder(output_surffix, output_path, HumanSamples, groupByGSE, encodeGS
             FirstSampleToInput[sample.id] = FirstSampleToInput[sample.id].union(bestMatchID)
         else:
             not_found += 1
+
+        # if candidate == 'GSM838673':
+        #     print(FirstSampleToInput[sample.id])
 
     for key in noneTitle:
         sample = HumanSamples[key]
