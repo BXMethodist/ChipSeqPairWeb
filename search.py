@@ -29,7 +29,7 @@ import re
 
 def Search(output_prefix, output_path, keywords, _Species, cwd, _inputEmail=None):
     avals_lowers = [x.lower() for x in os.listdir('./aval')]
-    avals = [x for x in os.listdir('./aval')]
+    avals = ['./aval/' + x for x in os.listdir('./aval')]
     keywords_with_species = [word.lower()+'_'+_Species.replace(' ', '').lower()+'.csv' for word in keywords]
 
     avals_results = []
@@ -37,12 +37,18 @@ def Search(output_prefix, output_path, keywords, _Species, cwd, _inputEmail=None
     for i in range(len(avals_lowers)):
         if avals_lowers[i] in keywords_with_species:
             avals_results.append(i)
-    print avals_results
+
     if len(avals_results) != 0:
-        return [avals[i] for i in avals_results]
+        curated_result_df = pd.read_csv(avals[avals_results[0]], index_col=0)
+        curated_index = curated_result_df.index
+    else:
+        curated_index = None
 
     chip_db = sqlite3.connect(cwd)
     df = pd.read_sql_query('SELECT * from metadata', con=chip_db, index_col=['Data_ID'])
+
+    for s in df['Species'].unique():
+        print '<option value="'+s+'">'+s+'</option>'
 
     df = df[df['Species'].str.lower() == _Species.lower()]
     GSEGSM_map = defaultdict(set)
@@ -145,8 +151,14 @@ def Search(output_prefix, output_path, keywords, _Species, cwd, _inputEmail=None
         result_df = result_df.append(human_encode)
         samples.update(human_encode_map)
 
-    output_name = output_path + output_prefix + '_' + '_'.join(_Species.split()) + '.csv'
+    # output_name = output_path + output_prefix + '_' + '_'.join(_Species.split()) + '.csv'
     # result_df.to_csv(output_name)
+    if curated_index is not None:
+        result_df = result_df.ix[curated_index, :]
+        for sample_id in samples.keys():
+            if sample_id not in curated_index:
+                del samples[sample_id]
+
     return result_df, samples
 
 def dfToSamples(df):

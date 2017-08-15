@@ -423,15 +423,12 @@ def query():
 
 @celery.task(name='main_celery.search')
 def CallSearch(output_prefix, output_path, keywords, _Species, cwd, _inputEmail):
-    results = Search(output_prefix, output_path, keywords, _Species, cwd, _inputEmail)
-    # print type(results)
-    if isinstance(results, tuple):
-        result_df, samples = Search(output_prefix, output_path, keywords, _Species, cwd, _inputEmail)
-        species = _Species.replace(" ", '')
-        output_name = output_prefix+"_"+ species + '.csv'
-        send_email(_inputEmail, [result_df], output_path, [output_name])
-    else:
-        send_email_aval(_inputEmail, results)
+
+    result_df, samples = Search(output_prefix, output_path, keywords, _Species, cwd, _inputEmail)
+    species = _Species.replace(" ", '')
+    output_name = output_prefix+"_"+ species + '.csv'
+    send_email(_inputEmail, [result_df], output_path, [output_name])
+
     return
 
 @celery.task(name='main_celery.match')
@@ -458,7 +455,10 @@ def send_email(email, results, output_path, output_names):
     for i in range(len(results)):
         table = results[i]
         output_name = output_names[i]
-        table.to_csv(output_path+output_name, encoding='utf-8')
+        try:
+            table.to_csv(output_path+output_name, encoding='utf-8')
+        except:
+            table.to_csv(output_path + output_name)
         with app.open_resource(output_path+output_name) as table_file:
             msg.attach(output_name, output_name.replace('.','/'), table_file.read())
     mail.send(msg)
@@ -466,20 +466,20 @@ def send_email(email, results, output_path, output_names):
         os.system('rm '+output_path+name)
     return
 
-def send_email_aval(email, results):
-    subject = 'ChIPSeqPair Result'
-    message = 'Hello, <br> <br>' \
-              'Here is your result from ChipSeqPair <br> <br>' \
-              'Thanks!  <br> <br>' \
-              'Chen Lab'
-    print results,'lalala'
-    msg = Message(subject=subject, html=message, recipients=[email])
-    for path in results:
-        table = './aval/'+path
-        with app.open_resource(table) as table_file:
-            msg.attach(path, path.replace('.','/'), table_file.read())
-    mail.send(msg)
-    return
+# def send_email_aval(email, results):
+#     subject = 'ChIPSeqPair Result'
+#     message = 'Hello, <br> <br>' \
+#               'Here is your result from ChipSeqPair <br> <br>' \
+#               'Thanks!  <br> <br>' \
+#               'Chen Lab'
+#     print results,'lalala'
+#     msg = Message(subject=subject, html=message, recipients=[email])
+#     for path in results:
+#         table = './aval/'+path
+#         with app.open_resource(table) as table_file:
+#             msg.attach(path, path.replace('.','/'), table_file.read())
+#     mail.send(msg)
+#     return
 
 def features():
     session['feature1'] = ''
