@@ -27,7 +27,17 @@ from input_search_utils import input_finder
 from encode import encode_search
 import re
 
-def Search(output_prefix, output_path, keywords, _Species, cwd, _inputEmail=None):
+def Search(output_prefix, output_path, keywords, _Species, cwd,
+           _CellLines, _CellTypes, _Organs, _Tissues, _Sequencing_protocol='chip-seq', _inputEmail=None):
+
+    chip_db = sqlite3.connect(cwd)
+    df = pd.read_sql_query('SELECT * from metadata', con=chip_db, index_col=['Data_ID'])
+
+    df = df[df['Species'].str.lower() == _Species.lower()]
+    GSEGSM_map = defaultdict(set)
+
+    antibody_df = df.copy()
+
     avals_lowers = [x.lower() for x in os.listdir('./aval')]
     avals = ['./aval/' + x for x in os.listdir('./aval')]
     keywords_with_species = [word.lower()+'_'+_Species.replace(' ', '').lower()+'.csv' for word in keywords]
@@ -44,28 +54,49 @@ def Search(output_prefix, output_path, keywords, _Species, cwd, _inputEmail=None
     else:
         curated_index = None
 
-    chip_db = sqlite3.connect(cwd)
-    df = pd.read_sql_query('SELECT * from metadata', con=chip_db, index_col=['Data_ID'])
-
-    for s in df['Species'].unique():
-        print '<option value="'+s+'">'+s+'</option>'
-
-    df = df[df['Species'].str.lower() == _Species.lower()]
-    GSEGSM_map = defaultdict(set)
-
     keywords = [word.lower() for word in keywords]
 
     pattern = '|'.join(map(re.escape, keywords))
 
     inputs_pattern = '|'.join(map(re.escape, ['input', 'control', 'igg', 'wce']))
 
-    title_indexes = df[(df.Title.str.lower().str.contains(pattern)) &
+    df = df[(df.Title.str.lower().str.contains(pattern)) &
                        (~((df.Title.str.lower().str.contains(inputs_pattern)) |
-                          (df.Antibody.str.lower().str.contains(inputs_pattern))))].index
+                          (df.Antibody.str.lower().str.contains(inputs_pattern))))]
 
-    antibody_indexes = df[(df.Antibody.str.lower().str.contains(pattern)) &
+    antibody_df = df[(df.Antibody.str.lower().str.contains(pattern)) &
                        (~((df.Title.str.lower().str.contains(inputs_pattern)) |
-                          (df.Antibody.str.lower().str.contains(inputs_pattern))))].index
+                          (df.Antibody.str.lower().str.contains(inputs_pattern))))]
+
+
+    celllines = [word.lower() for word in _CellLines]
+    cellline_pattern = '|'.join(map(re.escape, celllines))
+    df = df[df.CellLine.str.lower().str.contains(cellline_pattern)]
+
+    antibody_df = antibody_df[antibody_df.CellLine.str.lower().str.contains(cellline_pattern)]
+
+    celltypes = [word.lower() for word in _CellTypes]
+    celltype_pattern = '|'.join(map(re.escape, celltypes))
+    df = df[df.CellType.str.lower().str.contains(celltype_pattern)]
+    antibody_df = antibody_df[antibody_df.CellType.str.lower().str.contains(celltype_pattern)]
+
+    organs = [word.lower() for word in _Organs]
+    organ_pattern = '|'.join(map(re.escape, organs))
+    df = df[df.Organ.str.lower().str.contains(organ_pattern)]
+    antibody_df = antibody_df[antibody_df.Organ.str.lower().str.contains(organ_pattern)]
+
+    tissues = [word.lower() for word in _Tissues]
+    tissue_pattern = '|'.join(map(re.escape, tissues))
+    df = df[df.Tissue.str.lower().str.contains(tissue_pattern)]
+    antibody_df = antibody_df[antibody_df.Tissue.str.lower().str.contains(tissue_pattern)]
+
+    protocols = [word.lower() for word in _Sequencing_protocol]
+    protocol_pattern = '|'.join(map(re.escape, protocols))
+    df = df[df.SequencingProtocol.str.lower().str.contains(protocol_pattern)]
+    antibody_df = antibody_df[antibody_df.SequencingProtocol.str.lower().str.contains(protocol_pattern)]
+
+    title_indexes = df.index
+    antibody_indexes = antibody_df.index
 
     confidences = []
 
@@ -102,35 +133,41 @@ def Search(output_prefix, output_path, keywords, _Species, cwd, _inputEmail=None
 
     samples = dfToSamples(result_df)
 
-    Category1, Category3, relatedSamples = Input(output_prefix, output_path, keywords, _Species, GSEGSM_map, samples, df)
-
     inputs = []
     inputs_descriptions = []
 
-    for sample_id in result_df.index:
-        input_id = ''
-        cur_description = ''
-        if sample_id in Category1:
-            input_ids = Category1[sample_id]
-            input_id = input_id + ','.join(list(input_ids))
+    if keywords != []:
+        Category1, Category3, relatedSamples = Input(output_prefix, output_path, keywords, _Species, GSEGSM_map, samples, df)
+        for sample_id in result_df.index:
+            input_id = ''
+            cur_description = ''
+            if sample_id in Category1:
+                input_ids = Category1[sample_id]
+                input_id = input_id + ','.join(list(input_ids))
 
-            for id in input_ids:
-                cur_title = relatedSamples[id].title
-                cur_description += 'Title:' + cur_title + '; '
-                cur_antibodies = json.dumps(relatedSamples[id].antibody)
-                cur_description += 'Antibody:'+ cur_antibodies
+                for id in input_ids:
+                    cur_title = relatedSamples[id].title
+                    cur_description += 'Title:' + cur_title + '; '
+                    cur_antibodies = json.dumps(relatedSamples[id].antibody)
+                    cur_description += 'Antibody:'+ cur_antibodies
 
-        elif sample_id in Category3:
-            input_ids = Category3[sample_id]
-            input_id = input_id + ','.join(list(input_ids))
+            elif sample_id in Category3:
+                input_ids = Category3[sample_id]
+                input_id = input_id + ','.join(list(input_ids))
 
-            for id in input_ids:
-                cur_title = relatedSamples[id].title
-                cur_description += 'Title:' + cur_title + '; '
-                cur_antibodies = json.dumps(relatedSamples[id].antibody)
-                cur_description += 'Antibody:' + cur_antibodies
-        inputs.append(input_id)
-        inputs_descriptions.append(cur_description)
+                for id in input_ids:
+                    cur_title = relatedSamples[id].title
+                    cur_description += 'Title:' + cur_title + '; '
+                    cur_antibodies = json.dumps(relatedSamples[id].antibody)
+                    cur_description += 'Antibody:' + cur_antibodies
+            inputs.append(input_id)
+            inputs_descriptions.append(cur_description)
+    else:
+        for sample_id in result_df.index:
+            input_id = ''
+            cur_description = ''
+            inputs.append(input_id)
+            inputs_descriptions.append(cur_description)
 
 
     result_df['Input'] = inputs
@@ -145,7 +182,10 @@ def Search(output_prefix, output_path, keywords, _Species, cwd, _inputEmail=None
                "Input", "Input_Description", "Instrument_Model", "Raw Data", "Sequencing_Protocol",
                "Species", "Cell Line", "Cell Type", 'Tissue', 'Organ']
 
-    samples_encode, human_encode, human_encode_map = encode_search(output_prefix, keywords, output_type=_Species)
+    samples_encode, human_encode, human_encode_map = encode_search(output_prefix, keywords,
+                                                                   _CellLines, _CellTypes,
+                                                                   _Organs, _Tissues,
+                                                                   _Sequencing_protocol, output_type=_Species)
 
     if human_encode is not None:
         result_df = result_df.append(human_encode)
@@ -202,22 +242,20 @@ def Input(output_prefix, output_path,features, speices, GSEGSM_map, samples, df)
 
     relatedSamples = {}
 
-    # print(samples['GSM838673'].series)
-    # print(samples['GSM1424572'].series)
-
     for sample_id in samples.keys():
         cur_relatedGSEs = samples[sample_id].series
 
-        # if sample_id == 'GSM763422':
-        #     print(cur_relatedGSEs)
-
         for gse in cur_relatedGSEs:
             cur_relatedGSMs = GSEGSM_map[gse]
-            # if gse == 'GSE33912':
-            #     print(cur_relatedGSMs)
+
             for gsm in cur_relatedGSMs:
                 relatedSamples[gsm] = PandasToSample(gsm, df.ix[gsm, :])
 
     Category1, Category3 = input_finder(output_prefix, output_path, samples, GSEGSM_map, encodeGSE, relatedSamples,
                                         features, features_begin, ignorecase, speices)
     return Category1, Category3, relatedSamples
+
+
+if __name__ == "__main__":
+    results = Search('' ,'',[],'Homo sapiens','/Users/boxia/PycharmProjects/ChiPSeqPairWeb/db/chipseq.db',['mcf-7'],[],[],[])
+    print results

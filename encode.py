@@ -20,10 +20,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-import pandas as pd
+import pandas as pd, re
 from sample import GSM
 
-def encode_search(output_prefix, keywords, keywords_begin=(), type_seq='chip-seq',
+def encode_search(output_prefix, keywords, _CellLines, _CellTypes, _Organs, _Tissues,
+                  type_seq='chip-seq',
+                  keywords_begin=(),
                   candidates=(), ignorecase=True, output_type='Homo sapiens'):
 
     seq_types = ['RNA-PET', 'ATAC-seq', 'genotyping by high throughput sequencing assay', 'HiC', 'RNA-seq',
@@ -56,6 +58,14 @@ def encode_search(output_prefix, keywords, keywords_begin=(), type_seq='chip-seq
     else:
         features_begin = "|".join(keywords_begin)
         df = df[df['Experiment target'].str.startswith(features_begin, na=False)]
+
+    celllines = [word.lower() for word in _CellLines]
+    cellline_pattern = '|'.join(map(re.escape, celllines))
+    df = df[df['Biosample term name'].str.lower().str.contains(cellline_pattern)]
+
+    celltypes = [word.lower() for word in _CellTypes]
+    celltype_pattern = '|'.join(map(re.escape, celltypes))
+    df = df[df['Biosample type'].str.lower().str.contains(celltype_pattern)]
 
     df['Confidence'] = ['High Confident'] * len(df.index)
     df['Input_Description'] = ['indicated by encode'] * len(df.index)
