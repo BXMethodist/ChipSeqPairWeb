@@ -26,10 +26,13 @@ import pandas as pd
 from search import Search
 
 
-def Match(output_prefix1, output_prefix2, output_path, first_features, second_features, species, cwd, _inputEmail):
+def Match(output_prefix1, output_prefix2, output_path, first_features, second_features, species, cwd,
+          _CellLines, _CellTypes, _Organs, _Tissues, _inputEmail):
 
-    first_df, first_samples = Search(output_prefix1, output_path, first_features, species, cwd, _inputEmail)
-    second_df, second_samples = Search(output_prefix2, output_path, second_features, species, cwd, _inputEmail)
+    first_df, first_samples = Search(output_prefix1, output_path, first_features, species, cwd,
+                                     _CellLines, _CellTypes, _Organs, _Tissues, _inputEmail=_inputEmail)
+    second_df, second_samples = Search(output_prefix2, output_path, second_features, species, cwd,
+                                       _CellLines, _CellTypes, _Organs, _Tissues, _inputEmail=_inputEmail)
 
     first_features_begin = []
     first_ignorecase = True

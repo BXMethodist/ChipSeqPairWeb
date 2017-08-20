@@ -49,6 +49,7 @@ def encode_search(output_prefix, keywords, _CellLines, _CellTypes, _Organs, _Tis
 
     df = pd.read_csv(url, sep='\t', dtype=str)
     case = False if ignorecase else True
+    # print df.shape
 
     features = "|".join(keywords)
     df = df[df['Experiment target'].str.contains(features, case=case, na=False)]
@@ -59,13 +60,22 @@ def encode_search(output_prefix, keywords, _CellLines, _CellTypes, _Organs, _Tis
         features_begin = "|".join(keywords_begin)
         df = df[df['Experiment target'].str.startswith(features_begin, na=False)]
 
+    # print df.shape
+
+    # print df['Biosample term name'].unique()
     celllines = [word.lower() for word in _CellLines]
     cellline_pattern = '|'.join(map(re.escape, celllines))
     df = df[df['Biosample term name'].str.lower().str.contains(cellline_pattern)]
 
+    # print df.shape
+
     celltypes = [word.lower() for word in _CellTypes]
     celltype_pattern = '|'.join(map(re.escape, celltypes))
     df = df[df['Biosample type'].str.lower().str.contains(celltype_pattern)]
+
+    organs = [word.lower() for word in _Organs]
+    organ_pattern = '|'.join(map(re.escape, organs))
+    df = df[df['Biosample term name'].str.lower().str.contains(organ_pattern)]
 
     df['Confidence'] = ['High Confident'] * len(df.index)
     df['Input_Description'] = ['indicated by encode'] * len(df.index)
@@ -79,10 +89,18 @@ def encode_search(output_prefix, keywords, _CellLines, _CellTypes, _Organs, _Tis
     samples_df.columns = ['Data_ID', 'Study_ID', 'Sequencing_Protocol', 'Cell Line', 'Cell Type', 'Species',
                           'Raw Data', 'Instrument_Model', 'Experiment target/antibody',
                           output_prefix.capitalize() + "_Description", 'Confidence']
+
+    # print output_type, output_type == 'Homo sapiens'
+
     samples_df = samples_df.set_index(['Data_ID'])
+    # print df.shape, 'before'
 
     df = df[df['Biosample organism'].str.contains(output_type, case=case, na=False)]
+
+    # print df.shape, 'mid', type_seq, type_seq=='chip-seq'
     df = df[df['Assay'].str.contains(type_seq, case=case, na=False)]
+
+    # print df.shape, 'after'
 
     if len(candidates) > 0:
         df = df.ix[candidates, ]

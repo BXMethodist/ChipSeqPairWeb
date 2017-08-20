@@ -145,7 +145,7 @@ def has_features(message, features, features_begin, ignorecase):
 
 def has_antibody(sample, keyword):
     for v in sample.antibody.values():
-        if v.find(keyword) != -1:
+        if v.lower() == keyword.lower():
             return True
     return False
 
@@ -158,12 +158,14 @@ def equal_antibody(sample, keyword):
 
 
 def isInput(sample, feature_key_word):
-    non_capital_keywords = ['input','wce']
+    non_capital_keywords = ['input', 'wce']
 
-    if feature_key_word.find("H3K") == -1:
+    if feature_key_word is None or feature_key_word == "":
         capital_keywords = ['IgG']
+    elif feature_key_word.lower().find('h3k') != -1:
+        capital_keywords = ['IgG', 'H3']
     else:
-        capital_keywords = ['IgG', '_H3_', " H3"]
+        capital_keywords = ['IgG']
 
     for c in non_capital_keywords:
         if sample.title.lower().find(c) != -1:
@@ -172,11 +174,9 @@ def isInput(sample, feature_key_word):
             return True, c
 
     for n in capital_keywords:
-        if n ==' H3' and sample.title[-3:] == ' H3':
-            return True, 'H3'
-        elif sample.title.find(n) != -1 and n !=' H3':
-            if n == "_H3_":
-                return True, 'H3'
+        if has_antibody(sample, n):
+            return True, n
+        elif sample.title.find(n) != -1 and n != 'H3':
             return True, n
     return False, ""
 
@@ -197,7 +197,7 @@ def input_finder(output_surffix, output_path, HumanSamples, groupByGSE, encodeGS
         else:
             noneTitle.add(key)
 
-    # print "title and none title", len(titleCandidates), len(noneTitle)
+    # print "title and none title", 'GSM1508939' in titleCandidates, 'GSM1508939' in noneTitle
     not_found = 0
     # get their related samples
     for candidate in titleCandidates:
@@ -220,7 +220,8 @@ def input_finder(output_surffix, output_path, HumanSamples, groupByGSE, encodeGS
                     continue
                 score = None
                 boo, word = isInput(relatedSamples[relatedSample], feature_key_word)
-                # print relatedSamples[relatedSample].title, boo, word
+                # if relatedSample == 'GSM1918612':
+                #     print candidate, relatedSamples[relatedSample].title, boo, word
                 if boo \
                         and sample.cellLine == relatedSamples[relatedSample].cellLine \
                         and sample.cellType == relatedSamples[relatedSample].cellType \
@@ -229,69 +230,136 @@ def input_finder(output_surffix, output_path, HumanSamples, groupByGSE, encodeGS
                     score1, score2 = Similarity(sample.title, feature_key_word, relatedSamples[relatedSample].title,
                                        word, ignorecase)
 
-                    if score1 is not None and score1 > bestSimilarity:
+                    # if candidate == 'GSM2067932':
+                    #     print score1, score2, relatedSample, candidate
+                    #     print input_keyword.lower() == 'h3' and word.lower() != 'h3'
+                    #     print input_keyword.lower() == 'igg' and word.lower() != 'h3' and word.lower() != 'igg'
+                    #     print score1 > bestSimilarity, score1, bestSimilarity, type(score1), type(bestSimilarity)
+                    #     print score2 > bestSimilarity2 and score1 == bestSimilarity
+
+                    if input_keyword.lower() == 'h3' and word.lower() != 'h3':
                         bestSimilarity = score1
                         bestSimilarity2 = score2
                         bestMatchID = set()
                         bestMatchID.add(relatedSamples[relatedSample].id)
                         input_keyword = word
-                    elif score1 is not None and score1 == bestSimilarity:
-                        if input_keyword == 'H3' and word != 'H3':
+                    # elif input_keyword.lower() == 'igg' and word.lower() != 'h3' and word.lower() != 'igg':
+                    #     bestSimilarity = score1
+                    #     bestSimilarity2 = score2
+                    #     bestMatchID = set()
+                    #     bestMatchID.add(relatedSamples[relatedSample].id)
+                    #     input_keyword = word
+                    elif score1 > bestSimilarity:
+                        if word.lower() == 'h3' \
+                                and input_keyword.lower() != 'h3' \
+                                and input_keyword != "":
+                            pass
+                        else:
+                            bestSimilarity = score1
+                            bestSimilarity2 = score2
+                            bestMatchID = set()
+                            bestMatchID.add(relatedSamples[relatedSample].id)
+                            input_keyword = word
+                    elif score2 > bestSimilarity2 and score1 == bestSimilarity:
+                        if word.lower() == 'h3' \
+                                and input_keyword.lower() != 'h3' \
+                                and input_keyword != "":
+                            pass
+                        else:
                             bestMatchID = set()
                             bestMatchID.add(relatedSamples[relatedSample].id)
                             input_keyword = word
                             bestSimilarity = score1
                             bestSimilarity2 = score2
-                        elif input_keyword != 'H3' and word == 'H3':
-                            pass
-                        else:
-                            if score2 is not None and score2 > bestSimilarity2:
-                                bestSimilarity2 = score2
-                                bestMatchID = set()
-                                bestMatchID.add(relatedSamples[relatedSample].id)
 
         if bestMatchID:
             FirstSampleToInput[sample.id] = FirstSampleToInput[sample.id].union(bestMatchID)
         else:
             not_found += 1
 
-        # if candidate == 'GSM838673':
-        #     print(FirstSampleToInput[sample.id])
-
     for key in noneTitle:
         sample = HumanSamples[key]
         targetGSEs = set(sample.series)
 
-        best_char_score = 0
+        best_char_score = None
         best_id = set()
+
+        input_keyword = ""
 
         for gse in targetGSEs:
             for relatedSample in groupByGSE[gse]:
-                char_score = None
-                for v in relatedSamples[relatedSample].antibody.values():
-                    if v.find("input")!= -1 and sample.id != relatedSamples[relatedSample].id \
-                            and sample.cellLine == relatedSamples[relatedSample].cellLine:
-                        char_score = Character_Similarity(sample, relatedSamples[relatedSample])
-                    elif v.lower().find(" wce ") != -1 and sample.id != relatedSamples[relatedSample].id \
-                            and sample.cellLine == relatedSamples[relatedSample].cellLine:
-                        char_score = Character_Similarity(sample, relatedSamples[relatedSample])
-                    elif v.lower().find("whole cell extract") != -1 and sample.id != relatedSamples[relatedSample].id \
-                            and sample.cellLine == relatedSamples[relatedSample].cellLine:
-                        char_score = Character_Similarity(sample, relatedSamples[relatedSample])
-                    elif v.find("IgG") != -1 and sample.id != relatedSamples[relatedSample].id \
-                            and sample.cellLine == relatedSamples[relatedSample].cellLine:
-                        char_score = Character_Similarity(sample, relatedSamples[relatedSample])
-                if char_score is not None and char_score > best_char_score:
-                    best_id = set()
-                    best_id.add(relatedSamples[relatedSample].id)
-                    best_char_score = char_score
-                elif char_score is not None and char_score == best_char_score:
-                    best_id.add(relatedSamples[relatedSample].id)
+                if relatedSample == key:
+                    continue
+                feature_key_word = keyword(sample.title, features, features_begin, ignorecase)
+                score = None
+                boo, word = isInput(relatedSamples[relatedSample], feature_key_word)
+                if key == 'GSM1688590':
+                    print relatedSamples[relatedSample].title, boo, word, 'nontitle'
+                if boo \
+                        and sample.cellLine == relatedSamples[relatedSample].cellLine \
+                        and sample.cellType == relatedSamples[relatedSample].cellType \
+                        and sample.tissue == relatedSamples[relatedSample].tissue:
 
-        if best_id:
-            ThirdSampleToInput[sample.id] = best_id
-        else:
-            not_found+=1
+                    score = Character_Similarity(sample, relatedSamples[relatedSample])
+
+                    # if key == 'GSM1688590':
+                    #     print score, relatedSample, key
+                    #     print input_keyword.lower() == 'h3' and word.lower() != 'h3'
+                    #     print input_keyword.lower() == 'igg' and word.lower() != 'h3' and word.lower() != 'igg'
+                    #     print score > best_char_score, score, best_char_score
+
+                    if input_keyword.lower() == 'h3' and word.lower() != 'h3':
+                        best_char_score = score
+                        best_id = set()
+                        best_id.add(relatedSamples[relatedSample].id)
+                        input_keyword = word
+                    # elif input_keyword.lower() == 'igg' and word.lower() != 'h3' and word.lower() != 'igg':
+                    #     best_char_score = score
+                    #     best_id = set()
+                    #     best_id.add(relatedSamples[relatedSample].id)
+                    #     input_keyword = word
+                    elif score is not None and score > best_char_score:
+                        if word.lower() == 'h3' \
+                                and input_keyword.lower() != 'h3' \
+                                and input_keyword != "":
+                            pass
+                        else:
+                            best_char_score = score
+                            best_id = set()
+                            best_id.add(relatedSamples[relatedSample].id)
+                            input_keyword = word
+            if best_id:
+                ThirdSampleToInput[sample.id] = best_id
+            else:
+                not_found+=1
+
+        # for gse in targetGSEs:
+        #     for relatedSample in groupByGSE[gse]:
+        #         char_score = None
+        #         for v in relatedSamples[relatedSample].antibody.values():
+        #             if v.find("input")!= -1 and sample.id != relatedSamples[relatedSample].id \
+        #                     and sample.cellLine == relatedSamples[relatedSample].cellLine:
+        #                 char_score = Character_Similarity(sample, relatedSamples[relatedSample])
+        #             elif v.lower().find(" wce ") != -1 and sample.id != relatedSamples[relatedSample].id \
+        #                     and sample.cellLine == relatedSamples[relatedSample].cellLine:
+        #                 char_score = Character_Similarity(sample, relatedSamples[relatedSample])
+        #             elif v.lower().find("whole cell extract") != -1 and sample.id != relatedSamples[relatedSample].id \
+        #                     and sample.cellLine == relatedSamples[relatedSample].cellLine:
+        #                 char_score = Character_Similarity(sample, relatedSamples[relatedSample])
+        #             elif v.find("IgG") != -1 and sample.id != relatedSamples[relatedSample].id \
+        #                     and sample.cellLine == relatedSamples[relatedSample].cellLine:
+        #                 char_score = Character_Similarity(sample, relatedSamples[relatedSample])
+        #         if char_score is not None and char_score > best_char_score:
+        #             best_id = set()
+        #             best_id.add(relatedSamples[relatedSample].id)
+        #             best_char_score = char_score
+        #         elif char_score is not None and char_score == best_char_score:
+        #             best_id.add(relatedSamples[relatedSample].id)
+        #
+        # if best_id:
+        #     ThirdSampleToInput[sample.id] = best_id
+        # else:
+        #     not_found+=1
 
     # print not_found
     output_type = output_type.replace(" ", "_")

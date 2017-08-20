@@ -21,8 +21,16 @@
       <div class="jumbotron">
         <h1>Search</h1>
         <form action = "/search" class="form-search" method="post">
-        <label for="searchterms" class="sr-only">Search Terms</label>
-        <input type="text" name="searchterms" id="searchterms" class="form-control" placeholder="Search terms separated by ','" required>
+        <label for="searchterms" class="sr-only">Experiment Target/Antibody</label>
+        <input type="text" name="searchterms" id="searchterms" class="form-control" placeholder="Experiment Target separated by ','">
+        <label for="CellLines" class="sr-only">CellLines</label>
+        <input type="text" name="CellLines" id="CellLines" class="form-control" placeholder="Cell Lines separated by ','">
+        <label for="CellTypes" class="sr-only">CellTypes</label>
+        <input type="text" name="CellTypes" id="CellTypes" class="form-control" placeholder="Cell Types separated by ','">
+        <label for="Organs" class="sr-only">Organs</label>
+        <input type="text" name="Organs" id="Organs" class="form-control" placeholder="Organs separated by ','">
+        <label for="Tissues" class="sr-only">Tissues</label>
+        <input type="text" name="Tissues" id="Tissues" class="form-control" placeholder="Tissues separated by ','">
         <label for="Species" class="sr-only">Organism</label>
         <select name="Species" id="Species" class="form-control">
           <option value="Homo sapiens">Homo sapiens</option>

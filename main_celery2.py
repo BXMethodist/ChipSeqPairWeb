@@ -12,24 +12,12 @@ app.config['CELERY_BROKER_URL'] = 'amqp://localhost//'
 
 app.config.update(
     DEBUG = False,
-    MAIL_SERVER = 'ismtp.tmh.tmhs',
+    MAIL_SERVER = 'smtp.tmh.tmhs',
 #    MAIL_ASCII_ATTACHMENTS = TRUE,
     MAIL_DEFAULT_SENDER= 'chenlabhoustonmethodist@gmail.com',
     MAIL_USERNAME='chenlabhoustonmethodist@gmail.com',
     MAIL_PASSWORD='R10-414D',
 )
-
-#app.config.update(
-#    DEBUG = False,
-#    MAIL_SERVER = 'smtp.gmail.com',
-#    MAIL_PORT = 465,
-#    MAIL_USE_SSL=True,
-#    MAIL_DEFAULT_SENDER=('Chen Lab', 'chenlabhoustonmethodist@gmail.com'),
-#    MAIL_MAX_EMAIL=10,
-#    MAIL_USERNAME='chenlabhoustonmethodist@gmail.com',
-#    MAIL_PASSWORD='R10-414D'
-#)
-
 
 app.secret_key = 'R10-414D'
 

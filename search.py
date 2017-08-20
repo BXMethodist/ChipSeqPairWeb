@@ -33,10 +33,16 @@ def Search(output_prefix, output_path, keywords, _Species, cwd,
     chip_db = sqlite3.connect(cwd)
     df = pd.read_sql_query('SELECT * from metadata', con=chip_db, index_col=['Data_ID'])
 
+    # for sample in ['GSM2521639', 'GSM1918597', 'GSM1918652', 'GSM1918653', 'GSM1918656', 'GSM1918598', 'GSM1918599', 'GSM1918600', 'GSM1918654', 'GSM1918655', 'GSM1918601', 'GSM1918602', 'GSM1918637', 'GSM1918638', 'GSM1918641', 'GSM1918603', 'GSM1918604', 'GSM1918605', 'GSM1918639', 'GSM1918640', 'GSM1918606', 'GSM1918607', 'GSM1918642', 'GSM1918643', 'GSM1918646', 'GSM1918608', 'GSM1918609', 'GSM1918610', 'GSM1918644', 'GSM1918645', 'GSM1918611', 'GSM1918612', 'GSM1918647', 'GSM1918648', 'GSM1918651', 'GSM1918613', 'GSM1918614', 'GSM1918615', 'GSM1918649', 'GSM1918650', 'GSM1918616', 'GSM2264588', 'GSM2264589', 'GSM2264591', 'GSM2264592', 'GSM2398391', 'GSM2398392', 'GSM2398393', 'GSM2398394', 'GSM2398395', 'GSM2468807', 'GSM2468809', 'GSM2468811', 'GSM2468812']:
+    #     if sample in df.index:
+    #         print sample
+    #     else:
+    #         print 'lala',sample, 'lala'
+    #
+    # print df.ix['GSM1918655', 'Antibody']
+
     df = df[df['Species'].str.lower() == _Species.lower()]
     GSEGSM_map = defaultdict(set)
-
-    antibody_df = df.copy()
 
     avals_lowers = [x.lower() for x in os.listdir('./aval')]
     avals = ['./aval/' + x for x in os.listdir('./aval')]
@@ -55,47 +61,59 @@ def Search(output_prefix, output_path, keywords, _Species, cwd,
         curated_index = None
 
     keywords = [word.lower() for word in keywords]
-
+    # print keywords
     pattern = '|'.join(map(re.escape, keywords))
 
-    inputs_pattern = '|'.join(map(re.escape, ['input', 'control', 'igg', 'wce']))
+    print pattern
 
-    df = df[(df.Title.str.lower().str.contains(pattern)) &
-                       (~((df.Title.str.lower().str.contains(inputs_pattern)) |
-                          (df.Antibody.str.lower().str.contains(inputs_pattern))))]
+    if len(keywords) != 0 and keywords[0] != '':
+        inputs_pattern = '|'.join(map(re.escape, ['input', 'igg', 'wce']))
 
-    antibody_df = df[(df.Antibody.str.lower().str.contains(pattern)) &
-                       (~((df.Title.str.lower().str.contains(inputs_pattern)) |
-                          (df.Antibody.str.lower().str.contains(inputs_pattern))))]
+        title_df = df[(df.Title.str.lower().str.contains(pattern)) &
+                           (~((df.Title.str.lower().str.contains(inputs_pattern)) |
+                              (df.Antibody.str.lower().str.contains(inputs_pattern))))]
 
+        antibody_df = df[((df.Antibody.str.lower().str.contains(pattern))|(df.Characteristics.str.lower().str.contains(pattern))) &
+                           (~(df.Title.str.lower().str.contains(inputs_pattern)))]
+    else:
+        title_df = df[df.Title.str.lower().str.contains(pattern)]
+
+        antibody_df = df[(df.Antibody.str.lower().str.contains(pattern)) | (df.Characteristics.str.lower().str.contains(pattern))]
+    # print df.shape
+    # print 'GSM1918655' in antibody_df.index
+    print title_df.shape
 
     celllines = [word.lower() for word in _CellLines]
     cellline_pattern = '|'.join(map(re.escape, celllines))
-    df = df[df.CellLine.str.lower().str.contains(cellline_pattern)]
-
+    title_df = title_df[title_df.CellLine.str.lower().str.contains(cellline_pattern)]
     antibody_df = antibody_df[antibody_df.CellLine.str.lower().str.contains(cellline_pattern)]
+
+    print title_df.shape
 
     celltypes = [word.lower() for word in _CellTypes]
     celltype_pattern = '|'.join(map(re.escape, celltypes))
-    df = df[df.CellType.str.lower().str.contains(celltype_pattern)]
+    title_df = title_df[title_df.CellType.str.lower().str.contains(celltype_pattern)]
     antibody_df = antibody_df[antibody_df.CellType.str.lower().str.contains(celltype_pattern)]
 
     organs = [word.lower() for word in _Organs]
     organ_pattern = '|'.join(map(re.escape, organs))
-    df = df[df.Organ.str.lower().str.contains(organ_pattern)]
+    title_df = title_df[title_df.Organ.str.lower().str.contains(organ_pattern)]
     antibody_df = antibody_df[antibody_df.Organ.str.lower().str.contains(organ_pattern)]
 
     tissues = [word.lower() for word in _Tissues]
     tissue_pattern = '|'.join(map(re.escape, tissues))
-    df = df[df.Tissue.str.lower().str.contains(tissue_pattern)]
+    title_df = title_df[title_df.Tissue.str.lower().str.contains(tissue_pattern)]
     antibody_df = antibody_df[antibody_df.Tissue.str.lower().str.contains(tissue_pattern)]
 
-    protocols = [word.lower() for word in _Sequencing_protocol]
-    protocol_pattern = '|'.join(map(re.escape, protocols))
-    df = df[df.SequencingProtocol.str.lower().str.contains(protocol_pattern)]
-    antibody_df = antibody_df[antibody_df.SequencingProtocol.str.lower().str.contains(protocol_pattern)]
+    # protocols = [word.lower() for word in _Sequencing_protocol]
+    # protocol_pattern = '|'.join(map(re.escape, protocols))
+    # df = df[df.SequencingProtocol.str.lower().str.contains(protocol_pattern)]
+    # antibody_df = antibody_df[antibody_df.SequencingProtocol.str.lower().str.contains(protocol_pattern)]
 
-    title_indexes = df.index
+    # print df
+    # print antibody_df
+
+    title_indexes = title_df.index
     antibody_indexes = antibody_df.index
 
     confidences = []
@@ -182,23 +200,30 @@ def Search(output_prefix, output_path, keywords, _Species, cwd,
                "Input", "Input_Description", "Instrument_Model", "Raw Data", "Sequencing_Protocol",
                "Species", "Cell Line", "Cell Type", 'Tissue', 'Organ']
 
+    # print result_df.shape
     samples_encode, human_encode, human_encode_map = encode_search(output_prefix, keywords,
                                                                    _CellLines, _CellTypes,
                                                                    _Organs, _Tissues,
-                                                                   _Sequencing_protocol, output_type=_Species)
-
+                                                                      _Sequencing_protocol, output_type=_Species)
+    # print samples_encode.shape, human_encode.shape, type(human_encode)
     if human_encode is not None:
         result_df = result_df.append(human_encode)
         samples.update(human_encode_map)
 
+    # print result_df.shape, len(samples)
     # output_name = output_path + output_prefix + '_' + '_'.join(_Species.split()) + '.csv'
     # result_df.to_csv(output_name)
     if curated_index is not None:
-        result_df = result_df.ix[curated_index, :]
+        valid_index = []
         for sample_id in samples.keys():
             if sample_id not in curated_index:
                 del samples[sample_id]
+                # print sample_id, 'deleted'
+            else:
+                valid_index.append(sample_id)
+        result_df = result_df.ix[valid_index, :]
 
+    # print result_df.shape, len(samples)
     return result_df, samples
 
 def dfToSamples(df):
@@ -253,9 +278,10 @@ def Input(output_prefix, output_path,features, speices, GSEGSM_map, samples, df)
 
     Category1, Category3 = input_finder(output_prefix, output_path, samples, GSEGSM_map, encodeGSE, relatedSamples,
                                         features, features_begin, ignorecase, speices)
+    # print len(Category1), len(Category3)
     return Category1, Category3, relatedSamples
 
 
 if __name__ == "__main__":
-    results = Search('' ,'',[],'Homo sapiens','/Users/boxia/PycharmProjects/ChiPSeqPairWeb/db/chipseq.db',['mcf-7'],[],[],[])
-    print results
+    results = Search('' ,'',['h3k4me3'],'Homo sapiens','/Users/boxia/PycharmProjects/ChiPSeqPairWeb/db/chipseq.db',[],[],[],[])
+
